@@ -89,7 +89,15 @@ const cars: Car[] = [
     },
 ];
 
+import { useNotification } from "@/context/NotificationContext";
+
 export default function MostSearched() {
+    const { showNotification } = useNotification();
+
+    const handleAction = (item: string) => {
+        showNotification('info', 'Coming Soon', `${item} details will be available soon!`);
+    };
+
     return (
         <section className="py-24 px-8 bg-white">
             <div className="max-w-7xl mx-auto text-center mb-16">
@@ -114,14 +122,14 @@ export default function MostSearched() {
 
             <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 {cars.map((car, index) => (
-                    <CarCard key={car.name} car={car} index={index} />
+                    <CarCard key={car.name} car={car} index={index} onAction={() => handleAction(car.name)} />
                 ))}
             </div>
         </section>
     );
 }
 
-function CarCard({ car, index }: { car: Car; index: number }) {
+function CarCard({ car, index, onAction }: { car: Car; index: number; onAction: () => void }) {
     return (
         <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -169,7 +177,10 @@ function CarCard({ car, index }: { car: Car; index: number }) {
                         <span className="text-xl font-bold text-[#0a111f]">${car.price}</span>
                         <span className="text-gray-400 text-sm">/ Day</span>
                     </div>
-                    <button className="flex items-center gap-1 text-[#0a111f] font-bold text-sm hover:text-primary transition-colors group/btn">
+                    <button
+                        onClick={onAction}
+                        className="flex items-center gap-1 text-[#0a111f] font-bold text-sm hover:text-primary transition-colors group/btn"
+                    >
                         Show More
                         <ArrowUpRight size={18} className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
                     </button>

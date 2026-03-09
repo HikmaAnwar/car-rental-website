@@ -55,7 +55,15 @@ const deals: CarDeal[] = [
 
 const brands = ["Honda", "BMW", "Audi", "Ford", "Tesla", "More 20+"];
 
+import { useNotification } from "@/context/NotificationContext";
+
 export default function ExploreTopDeals() {
+    const { showNotification } = useNotification();
+
+    const handleAction = (item: string) => {
+        showNotification('info', 'Coming Soon', `${item} details will be available soon!`);
+    };
+
     return (
         <section className="py-24 px-8 bg-[#e8f7ff]">
             <div className="max-w-7xl mx-auto text-center mb-12">
@@ -88,6 +96,7 @@ export default function ExploreTopDeals() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: index * 0.1 }}
+                        onClick={() => handleAction(brand)}
                         className="bg-white px-8 py-3 rounded-xl shadow-sm hover:shadow-md border border-gray-100 font-bold text-[#0a111f] transition-all hover:border-primary/30 flex items-center justify-center min-w-[140px]"
                     >
                         {brand}
@@ -98,14 +107,14 @@ export default function ExploreTopDeals() {
             {/* Deal Grid */}
             <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 {deals.map((deal, index) => (
-                    <DealCard key={deal.name} deal={deal} index={index} />
+                    <DealCard key={deal.name} deal={deal} index={index} onAction={() => handleAction(deal.name)} />
                 ))}
             </div>
         </section>
     );
 }
 
-function DealCard({ deal, index }: { deal: CarDeal; index: number }) {
+function DealCard({ deal, index, onAction }: { deal: CarDeal; index: number; onAction: () => void }) {
     return (
         <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -142,7 +151,7 @@ function DealCard({ deal, index }: { deal: CarDeal; index: number }) {
                     </div>
                     <div className="h-3 w-px bg-gray-200" />
                     <div className="flex items-center gap-1">
-                        <Settings2 size={14} className="text-gray-400" />
+                        <Users size={14} className="text-gray-400" />
                         <span>{deal.transmission}</span>
                     </div>
                 </div>
@@ -153,7 +162,10 @@ function DealCard({ deal, index }: { deal: CarDeal; index: number }) {
                         <span className="text-lg font-bold text-[#0a111f]">${deal.price}</span>
                         <span className="text-gray-400 text-xs">/ Day</span>
                     </div>
-                    <button className="flex items-center gap-1 text-[#0a111f] font-bold text-xs hover:text-primary transition-colors group/btn">
+                    <button
+                        onClick={onAction}
+                        className="flex items-center gap-1 text-[#0a111f] font-bold text-xs hover:text-primary transition-colors group/btn"
+                    >
                         Show More
                         <ArrowUpRight size={16} className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
                     </button>

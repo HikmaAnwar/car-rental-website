@@ -5,22 +5,45 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Mail, Lock, User, UserPlus, ArrowRight, CheckCircle2 } from "lucide-react";
+import { useNotification } from "@/context/NotificationContext";
 
 export default function SignupPage() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState("");
     const [isSuccess, setIsSuccess] = useState(false);
+    const { showNotification } = useNotification();
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        // TODO: Connect to backend /api/register
-        setTimeout(() => {
+        setError("");
+
+        try {
+            const response = await fetch("/api/auth/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username: name, email, password }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                setIsSuccess(true);
+                showNotification('success', 'Welcome!', 'Your account has been created successfully.');
+            } else {
+                const errMsg = data.error || "Something went wrong. Please try again.";
+                setError(errMsg);
+                showNotification('error', 'Registration Failed', errMsg);
+            }
+        } catch (err) {
+            setError("Network error. Please check your connection.");
+            showNotification('error', 'Connection Error', 'Please check your network connection.');
+        } finally {
             setIsLoading(false);
-            setIsSuccess(true);
-        }, 2000);
+        }
     };
 
     if (isSuccess) {
@@ -79,6 +102,16 @@ export default function SignupPage() {
                         </h1>
                         <p className="text-text-muted">Unlock exclusive access to luxury car rentals.</p>
                     </div>
+
+                    {error && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-red-500/10 border border-red-500/50 text-red-500 px-4 py-3 rounded-2xl mb-6 text-sm text-center"
+                        >
+                            {error}
+                        </motion.div>
+                    )}
 
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div className="space-y-4">

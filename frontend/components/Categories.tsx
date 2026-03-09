@@ -11,7 +11,15 @@ const categories = [
     { name: "Luxury", image: "/cars/porsche-v2.png" }, // Placeholder for luxury
 ];
 
+import { useNotification } from "@/context/NotificationContext";
+
 export default function Categories() {
+    const { showNotification } = useNotification();
+
+    const handleCategoryClick = (name: string) => {
+        showNotification('info', 'Filter Active', `Showing all ${name} vehicles.`);
+    };
+
     return (
         <section className="py-24 px-8 bg-[#e8f7ff]">
             <div className="max-w-7xl mx-auto text-center mb-16">
@@ -41,6 +49,7 @@ export default function Categories() {
                         name={category.name}
                         image={category.image}
                         index={index}
+                        onClick={() => handleCategoryClick(category.name)}
                     />
                 ))}
             </div>
@@ -48,7 +57,7 @@ export default function Categories() {
     );
 }
 
-function CategoryCard({ name, image, index }: { name: string, image: string, index: number }) {
+function CategoryCard({ name, image, index, onClick }: { name: string, image: string, index: number, onClick: () => void }) {
     return (
         <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -56,6 +65,7 @@ function CategoryCard({ name, image, index }: { name: string, image: string, ind
             viewport={{ once: true }}
             transition={{ delay: index * 0.1 }}
             whileHover={{ y: -8, transition: { duration: 0.3 } }}
+            onClick={onClick}
             className="w-[140px] md:w-[170px] bg-white rounded-[20px] border border-gray-100 p-5 flex flex-col items-center shadow-sm hover:shadow-xl transition-all duration-300 group cursor-pointer"
         >
             <div className="relative w-full aspect-[4/3] mb-4">

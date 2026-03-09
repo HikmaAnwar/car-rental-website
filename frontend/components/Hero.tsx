@@ -4,7 +4,15 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { ArrowRight, MapPin, Search, Car, Wallet } from "lucide-react";
 
+import { useNotification } from "@/context/NotificationContext";
+
 export default function Hero() {
+    const { showNotification } = useNotification();
+
+    const handleSearchClick = () => {
+        showNotification('info', 'Coming Soon', 'Search functionality is being prepared!');
+    };
+
     return (
         <section className="relative min-h-screen w-full pt-40 px-8 flex flex-col items-center justify-center overflow-hidden bg-background">
             {/* Background Glows */}
@@ -50,9 +58,9 @@ export default function Hero() {
 
                 {/* Sub-car Previews */}
                 <div className="flex gap-8 md:gap-16 mt-8">
-                    <CarSmallPreview src="/cars/jetour.png" name="Jetour" delay={1.8} />
-                    <CarSmallPreview src="/cars/byd.png" name="BYD" delay={2.0} />
-                    <CarSmallPreview src="/cars/hyundai.png" name="Hyundai" delay={2.2} />
+                    <CarSmallPreview src="/cars/jetour.png" name="Jetour" delay={1.8} onAction={() => handleSearchClick()} />
+                    <CarSmallPreview src="/cars/byd.png" name="BYD" delay={2.0} onAction={() => handleSearchClick()} />
+                    <CarSmallPreview src="/cars/hyundai.png" name="Hyundai" delay={2.2} onAction={() => handleSearchClick()} />
                 </div>
             </div>
 
@@ -68,26 +76,33 @@ export default function Hero() {
                         icon={<Search className="text-primary" size={20} />}
                         title="Search"
                         subtitle="Enter Keyword..."
+                        onClick={handleSearchClick}
                     />
                     <SearchItem
                         icon={<MapPin className="text-primary" size={20} />}
                         title="Location"
                         subtitle="Enter Location..."
+                        onClick={handleSearchClick}
                     />
                     <SearchItem
                         icon={<Car className="text-primary" size={20} />}
                         title="Car Type"
                         subtitle="Select Car Type"
+                        onClick={handleSearchClick}
                     />
                     <SearchItem
                         icon={<Wallet className="text-primary" size={20} />}
                         title="Price"
                         subtitle="Enter Your Budget"
+                        onClick={handleSearchClick}
                     />
 
                     {/* Search Action Button */}
                     <div className="w-full md:w-auto p-4 md:p-2">
-                        <button className="w-full md:w-auto bg-primary hover:bg-primary/80 text-white font-bold py-4 px-8 rounded-xl transition-all active:scale-95 shadow-[0_0_20px_rgba(0,102,255,0.4)]">
+                        <button
+                            onClick={handleSearchClick}
+                            className="w-full md:w-auto bg-primary hover:bg-primary/80 text-white font-bold py-4 px-8 rounded-xl transition-all active:scale-95 shadow-[0_0_20px_rgba(0,102,255,0.4)]"
+                        >
                             Search
                         </button>
                     </div>
@@ -97,9 +112,9 @@ export default function Hero() {
     );
 }
 
-function SearchItem({ icon, title, subtitle }: { icon: React.ReactNode, title: string, subtitle: string }) {
+function SearchItem({ icon, title, subtitle, onClick }: { icon: React.ReactNode, title: string, subtitle: string, onClick: () => void }) {
     return (
-        <div className="flex-1 w-full flex items-center gap-4 px-8 py-4 hover:bg-white/[0.02] transition-colors cursor-pointer group">
+        <div onClick={onClick} className="flex-1 w-full flex items-center gap-4 px-8 py-4 hover:bg-white/[0.02] transition-colors cursor-pointer group">
             <div className="p-3 bg-white/5 rounded-xl group-hover:scale-110 transition-transform">
                 {icon}
             </div>
@@ -111,12 +126,13 @@ function SearchItem({ icon, title, subtitle }: { icon: React.ReactNode, title: s
     );
 }
 
-function CarSmallPreview({ src, name, delay }: { src: string, name: string, delay: number }) {
+function CarSmallPreview({ src, name, delay, onAction }: { src: string, name: string, delay: number, onAction: () => void }) {
     return (
         <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay }}
+            onClick={onAction}
             className="relative w-24 md:w-40 aspect-video group cursor-pointer"
         >
             <Image
