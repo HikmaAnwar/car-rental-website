@@ -3,15 +3,12 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { name, email, password } = body;
-
-        // TODO: Connect this to your Go backend registration endpoint
-
+        const { username, email, password } = body;
 
         const backendRes = await fetch("http://localhost:8088/api/register", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, email, password })
+            body: JSON.stringify({ username, email, password })
         });
 
         const data = await backendRes.json();

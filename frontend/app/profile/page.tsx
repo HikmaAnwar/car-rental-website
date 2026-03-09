@@ -5,6 +5,7 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Shield, ShieldCheck, ShieldAlert, Key, CheckCircle2, ChevronRight, Mail, Phone, MapPin } from "lucide-react";
 import Navbar from "@/components/Navbar";
+import Modal from "@/components/Modal";
 import { useNotification } from "@/context/NotificationContext";
 
 export default function ProfilePage() {
@@ -14,6 +15,7 @@ export default function ProfilePage() {
     const [verificationCode, setVerificationCode] = useState("");
     const [statusMessage, setStatusMessage] = useState({ type: "", text: "" });
     const [isActionLoading, setIsActionLoading] = useState(false);
+    const [showDisableModal, setShowDisableModal] = useState(false);
     const { showNotification } = useNotification();
 
     useEffect(() => {
@@ -133,7 +135,6 @@ export default function ProfilePage() {
     };
 
     const handleDisable2FA = async () => {
-        if (!confirm("Are you sure you want to disable 2FA? This will make your account less secure.")) return;
         setIsActionLoading(true);
         try {
             const token = localStorage.getItem("access_token");
@@ -147,6 +148,7 @@ export default function ProfilePage() {
                 setStatusMessage({ type: "success", text: "2FA disabled successfully" });
                 showNotification('warning', 'Security Updated', '2FA has been disabled.');
                 fetchProfile();
+                setShowDisableModal(false);
             } else {
                 setStatusMessage({ type: "error", text: "Failed to disable 2FA" });
                 showNotification('error', 'Action Failed', 'Could not disable 2FA.');
@@ -273,7 +275,7 @@ export default function ProfilePage() {
                                                     </div>
                                                 </div>
                                                 <button
-                                                    onClick={user?.two_fa ? handleDisable2FA : handleEnable2FA}
+                                                    onClick={user?.two_fa ? () => setShowDisableModal(true) : handleEnable2FA}
                                                     disabled={isActionLoading}
                                                     className={`p-3 rounded-xl transition-all ${user?.two_fa
                                                         ? "bg-red-500/10 text-red-400 hover:bg-red-500/20"
@@ -344,6 +346,18 @@ export default function ProfilePage() {
                     </div>
                 </motion.div>
             </main>
+
+            <Modal
+                isOpen={showDisableModal}
+                onClose={() => setShowDisableModal(false)}
+                onConfirm={handleDisable2FA}
+                title="Disable 2FA?"
+                description="Are you sure you want to disable Two-Factor Authentication? This will significantly make your account less secure."
+                confirmText="Yes, Disable"
+                cancelText="Keep Protected"
+                type="danger"
+                isLoading={isActionLoading}
+            />
         </div>
     );
 }
