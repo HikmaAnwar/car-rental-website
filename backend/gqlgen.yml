@@ -1,0 +1,43 @@
+# gqlgen.yml configuration
+schema:
+  - internal/graph/*.graphql
+
+# Where should the generated server code go?
+exec:
+  filename: internal/graph/generated.go
+  package: graph
+
+# Where should any generated models go?
+model:
+  filename: internal/graph/model/models_gen.go
+  package: model
+
+# Where should the resolver implementations go?
+resolver:
+  layout: follow-schema
+  dir: internal/graph
+  package: graph
+
+# Optional: turn on use_ptr_index_access to avoid copying large objects
+# use_ptr_index_access: true
+
+# Optional: turn on omit_slice_element_pointers to avoid pointers in slices
+# omit_slice_element_pointers: false
+
+# gqlgen will search for any existing models in the following packages.
+# If it finds one, it will use it instead of generating a new one.
+autobind:
+  - "Web-app/backend/internal/models"
+
+models:
+  ID:
+    model:
+      - github.com/99designs/gqlgen/graphql.ID
+      - github.com/99designs/gqlgen/graphql.Int
+      - github.com/99designs/gqlgen/graphql.Int64
+      - github.com/99designs/gqlgen/graphql.Int32
+  Int:
+    model:
+      - github.com/99designs/gqlgen/graphql.Int
+      - github.com/99designs/gqlgen/graphql.Int64
+      - github.com/99designs/gqlgen/graphql.Int32

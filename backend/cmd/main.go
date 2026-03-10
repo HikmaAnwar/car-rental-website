@@ -9,6 +9,7 @@ import (
 
 	"Web-app/backend/internal/config"
 	"Web-app/backend/internal/database"
+	"Web-app/backend/internal/models"
 	"Web-app/backend/internal/routes"
 	docs "Web-app/backend/docs" // generated docs
 
@@ -67,6 +68,9 @@ func main() {
 	if err == nil {
 		defer sqlDB.Close()
 	}
+
+	db.AutoMigrate(&models.Car{})
+
 
 	// Initialize Gin router
 	r := gin.Default()

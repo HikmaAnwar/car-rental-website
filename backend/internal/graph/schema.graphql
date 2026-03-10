@@ -1,0 +1,17 @@
+type Car {
+  id: ID!
+  name: String!
+  brand: String!
+  pricePerDay: Float!
+  available: Boolean!
+  imageUrl: String
+}
+
+type Query {
+  cars: [Car!]!
+  car(id: ID!): Car
+}
+
+type Mutation {
+  createCar(name: String!, brand: String!, pricePerDay: Float!, imageUrl: String): Car!
+}

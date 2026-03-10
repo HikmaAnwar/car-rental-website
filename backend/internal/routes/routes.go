@@ -6,6 +6,9 @@ import (
 	"Web-app/backend/internal/repositories"
 	"Web-app/backend/internal/services"
 
+	"Web-app/backend/internal/graph"
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -51,8 +54,16 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 				})
 			})
 		}
-
 	}
+
+	// GraphQL routes
+	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{DB: db}}))
+
+	api.POST("/query", func(c *gin.Context) {
+		srv.ServeHTTP(c.Writer, c.Request)
+	})
+
+	api.GET("/playground", func(c *gin.Context) {
+		playground.Handler("GraphQL Playground", "/api/query").ServeHTTP(c.Writer, c.Request)
+	})
 }
-
-
