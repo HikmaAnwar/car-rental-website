@@ -48,6 +48,8 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		CreateCar func(childComplexity int, name string, brand string, pricePerDay float64, imageURL *string) int
+		DeleteCar func(childComplexity int, id string) int
+		UpdateCar func(childComplexity int, id string, name *string, brand *string, pricePerDay *float64, available *bool, imageURL *string) int
 	}
 
 	Query struct {
@@ -61,6 +63,8 @@ type CarResolver interface {
 }
 type MutationResolver interface {
 	CreateCar(ctx context.Context, name string, brand string, pricePerDay float64, imageURL *string) (*models.Car, error)
+	UpdateCar(ctx context.Context, id string, name *string, brand *string, pricePerDay *float64, available *bool, imageURL *string) (*models.Car, error)
+	DeleteCar(ctx context.Context, id string) (bool, error)
 }
 type QueryResolver interface {
 	Cars(ctx context.Context) ([]*models.Car, error)
@@ -129,6 +133,28 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.CreateCar(childComplexity, args["name"].(string), args["brand"].(string), args["pricePerDay"].(float64), args["imageUrl"].(*string)), true
+	case "Mutation.deleteCar":
+		if e.ComplexityRoot.Mutation.DeleteCar == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteCar_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteCar(childComplexity, args["id"].(string)), true
+	case "Mutation.updateCar":
+		if e.ComplexityRoot.Mutation.UpdateCar == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateCar_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.UpdateCar(childComplexity, args["id"].(string), args["name"].(*string), args["brand"].(*string), args["pricePerDay"].(*float64), args["available"].(*bool), args["imageUrl"].(*string)), true
 
 	case "Query.car":
 		if e.ComplexityRoot.Query.Car == nil {
@@ -272,6 +298,53 @@ func (ec *executionContext) field_Mutation_createCar_args(ctx context.Context, r
 		return nil, err
 	}
 	args["imageUrl"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteCar_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updateCar_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "name", ec.unmarshalOString2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["name"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "brand", ec.unmarshalOString2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["brand"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "pricePerDay", ec.unmarshalOFloat2ᚖfloat64)
+	if err != nil {
+		return nil, err
+	}
+	args["pricePerDay"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "available", ec.unmarshalOBoolean2ᚖbool)
+	if err != nil {
+		return nil, err
+	}
+	args["available"] = arg4
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "imageUrl", ec.unmarshalOString2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["imageUrl"] = arg5
 	return args, nil
 }
 
@@ -572,6 +645,102 @@ func (ec *executionContext) fieldContext_Mutation_createCar(ctx context.Context,
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_createCar_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateCar(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_updateCar,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().UpdateCar(ctx, fc.Args["id"].(string), fc.Args["name"].(*string), fc.Args["brand"].(*string), fc.Args["pricePerDay"].(*float64), fc.Args["available"].(*bool), fc.Args["imageUrl"].(*string))
+		},
+		nil,
+		ec.marshalNCar2ᚖWebᚑappᚋbackendᚋinternalᚋmodelsᚐCar,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateCar(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Car_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Car_name(ctx, field)
+			case "brand":
+				return ec.fieldContext_Car_brand(ctx, field)
+			case "pricePerDay":
+				return ec.fieldContext_Car_pricePerDay(ctx, field)
+			case "available":
+				return ec.fieldContext_Car_available(ctx, field)
+			case "imageUrl":
+				return ec.fieldContext_Car_imageUrl(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Car", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateCar_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteCar(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_deleteCar,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().DeleteCar(ctx, fc.Args["id"].(string))
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteCar(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteCar_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -2356,6 +2525,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "updateCar":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateCar(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteCar":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteCar(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3075,6 +3258,23 @@ func (ec *executionContext) marshalOCar2ᚖWebᚑappᚋbackendᚋinternalᚋmode
 		return graphql.Null
 	}
 	return ec._Car(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOFloat2ᚖfloat64(ctx context.Context, v any) (*float64, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalFloatContext(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel ast.SelectionSet, v *float64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	_ = sel
+	res := graphql.MarshalFloatContext(*v)
+	return graphql.WrapContextMarshaler(ctx, res)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v any) (string, error) {

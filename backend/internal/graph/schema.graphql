@@ -14,4 +14,6 @@ type Query {
 
 type Mutation {
   createCar(name: String!, brand: String!, pricePerDay: Float!, imageUrl: String): Car!
+  updateCar(id: ID!, name: String, brand: String, pricePerDay: Float, available: Boolean, imageUrl: String): Car!
+  deleteCar(id: ID!): Boolean!
 }

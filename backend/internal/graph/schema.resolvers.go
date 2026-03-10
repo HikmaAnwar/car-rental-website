@@ -35,6 +35,53 @@ func (r *mutationResolver) CreateCar(ctx context.Context, name string, brand str
 	return car, nil
 }
 
+// UpdateCar is the resolver for the updateCar field.
+func (r *mutationResolver) UpdateCar(ctx context.Context, id string, name *string, brand *string, pricePerDay *float64, available *bool, imageURL *string) (*models.Car, error) {
+	var car models.Car
+	// 1. Find the car in the database
+	if err := r.DB.First(&car, id).Error; err != nil {
+		return nil, fmt.Errorf("car not found")
+	}
+
+	// 2. Update fields only if they are provided (not null)
+	updates := make(map[string]interface{})
+	if name != nil {
+		updates["name"] = *name
+	}
+	if brand != nil {
+		updates["brand"] = *brand
+	}
+	if pricePerDay != nil {
+		updates["price_per_day"] = *pricePerDay
+	}
+	if available != nil {
+		updates["available"] = *available
+	}
+	if imageURL != nil {
+		updates["image_url"] = *imageURL
+	}
+
+	// 3. Save updates to DB
+	if err := r.DB.Model(&car).Updates(updates).Error; err != nil {
+		return nil, err
+	}
+
+	return &car, nil
+}
+
+
+// DeleteCar is the resolver for the deleteCar field.
+func (r *mutationResolver) DeleteCar(ctx context.Context, id string) (bool, error) {
+	var car models.Car
+	if err := r.DB.First(&car, id).Error; err != nil {
+		return false, err
+	}
+	if err := r.DB.Delete(&car).Error; err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // Cars is the resolver for the cars field.
 func (r *queryResolver) Cars(ctx context.Context) ([]*models.Car, error) {
 	var cars []*models.Car
