@@ -13,13 +13,14 @@ export const fleetService = {
     },
 
     // Add a new car
-    async addCar(name: string, brand: string, price: number): Promise<Car> {
+    async addCar(name: string, brand: string, price: number, imageUrl?: string): Promise<Car> {
         const { data } = await client.mutate<CreateCarData>({
             mutation: CREATE_CAR,
             variables: {
                 name,
                 brand,
                 pricePerDay: price,
+                imageUrl,
             },
         });
 
@@ -44,6 +45,7 @@ export const fleetService = {
                 brand: updates.brand,
                 pricePerDay: updates.pricePerDay,
                 available: updates.available,
+                imageUrl: updates.imageUrl,
             },
         });
         if (!data?.updateCar) throw new Error("Failed to update car");

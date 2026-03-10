@@ -4,19 +4,20 @@ export interface Car {
     brand: string;
     pricePerDay: number;
     available: boolean;
+    imageUrl?: string;
 }
 
 export interface GetCarsData {
     cars: Car[];
 }
 export interface CreateCarData {
-  createCar: Car;
+    createCar: Car;
 }
 
 export interface DeleteCarData {
-  deleteCar: boolean;
+    deleteCar: boolean;
 }
 
 export interface UpdateCarData {
-  updateCar: Car;
+    updateCar: Car;
 }
