@@ -4,68 +4,29 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { Users, Fuel, Settings2, ArrowUpRight } from "lucide-react";
 
-interface CarDeal {
-    name: string;
-    image: string;
-    emi: string;
-    seats: number;
-    fuel: string;
-    transmission: string;
-    price: string;
-}
-
-const deals: CarDeal[] = [
-    {
-        name: "Skoda Kamiq",
-        image: "/cars/hyundai.png",
-        emi: "1,46,275/mo",
-        seats: 7,
-        fuel: "Diesel",
-        transmission: "Manual",
-        price: "90",
-    },
-    {
-        name: "Nissan Micra",
-        image: "/cars/jetour.png",
-        emi: "12,789/mo",
-        seats: 4,
-        fuel: "Petrol",
-        transmission: "Automatic",
-        price: "40",
-    },
-    {
-        name: "Audi RS 7",
-        image: "/cars/porsche-v2.png",
-        emi: "1,80,425/mo",
-        seats: 4,
-        fuel: "Petrol",
-        transmission: "Automatic",
-        price: "95",
-    },
-    {
-        name: "Tesla Model Y",
-        image: "/cars/byd.png",
-        emi: "1,20,225/mo",
-        seats: 5,
-        fuel: "EV",
-        transmission: "Automatic",
-        price: "120",
-    },
-];
 
 const brands = ["Honda", "BMW", "Audi", "Ford", "Tesla", "More 20+"];
 
 import { useNotification } from "@/context/NotificationContext";
 
-export default function ExploreTopDeals() {
+import { Car } from "@/types";
+
+interface ExploreTopDealsProps {
+    cars: Car[];
+}
+
+export default function ExploreTopDeals({ cars }: ExploreTopDealsProps) {
     const { showNotification } = useNotification();
 
     const handleAction = (item: string) => {
         showNotification('info', 'Coming Soon', `${item} details will be available soon!`);
     };
 
+    // Use ONLY available cars for the landing deals, and limit to 4
+    const displayCars = cars.filter(c => c.available).slice(0, 4);
+
     return (
-        <section className="py-24 px-8 bg-[#e8f7ff]">
+        <section id="deals" className="py-24 px-8 bg-[#e8f7ff]">
             <div className="max-w-7xl mx-auto text-center mb-12">
                 <motion.h2
                     initial={{ opacity: 0, y: 20 }}
@@ -82,7 +43,7 @@ export default function ExploreTopDeals() {
                     transition={{ delay: 0.2 }}
                     className="text-gray-500 max-w-3xl mx-auto text-lg leading-relaxed"
                 >
-                    Get exclusive offers on high-end residences and coveted cars! Our incredible deals will
+                    Get exclusive offers on high-end cars! Our incredible deals will
                     help you save a tonne of money and improve your lifestyle.
                 </motion.p>
             </div>
@@ -106,15 +67,26 @@ export default function ExploreTopDeals() {
 
             {/* Deal Grid */}
             <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                {deals.map((deal, index) => (
-                    <DealCard key={deal.name} deal={deal} index={index} onAction={() => handleAction(deal.name)} />
-                ))}
+                {displayCars.length === 0 ? (
+                    <div className="col-span-full text-center py-20 text-gray-400 font-medium">
+                        No deals available at the moment. Check back soon!
+                    </div>
+                ) : (
+                    displayCars.map((car, index) => (
+                        <DealCard key={car.id} car={car} index={index} onAction={() => handleAction(car.name)} />
+                    ))
+                )}
             </div>
         </section>
     );
 }
 
-function DealCard({ deal, index, onAction }: { deal: CarDeal; index: number; onAction: () => void }) {
+function DealCard({ car, index, onAction }: { car: Car; index: number; onAction: () => void }) {
+    // Generate some deterministic placeholder data for fields not in backend
+    const seats = (parseInt(car.id) % 2 === 0) ? 5 : 4;
+    const fuel = (parseInt(car.id) % 3 === 0) ? "Diesel" : (parseInt(car.id) % 3 === 1) ? "Petrol" : "EV";
+    const transmission = (parseInt(car.id) % 2 === 1) ? "Manual" : "Automatic";
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -126,8 +98,8 @@ function DealCard({ deal, index, onAction }: { deal: CarDeal; index: number; onA
             {/* Image */}
             <div className="relative aspect-[16/10] bg-gray-50/50">
                 <Image
-                    src={deal.image}
-                    alt={deal.name}
+                    src={car.imageUrl || "/cars/hyundai.png"}
+                    alt={car.name}
                     fill
                     className="object-contain p-4 group-hover:scale-110 transition-transform duration-700"
                 />
@@ -135,39 +107,40 @@ function DealCard({ deal, index, onAction }: { deal: CarDeal; index: number; onA
 
             {/* Content */}
             <div className="p-6">
-                <h3 className="text-xl font-bold text-[#0a111f] mb-1">{deal.name}</h3>
-                <p className="text-gray-400 text-[10px] uppercase tracking-wider mb-4">EMI starts @ {deal.emi}</p>
+                <div className="flex justify-between items-start mb-1">
+                    <h3 className="text-xl font-bold text-[#0a111f] truncate">{car.name}</h3>
+                </div>
+                <p className="text-zinc-400 font-bold text-[10px] uppercase tracking-wider mb-4">{car.brand}</p>
 
                 {/* Specs */}
-                <div className="flex items-center gap-3 text-gray-500 text-[12px] mb-6 border-b border-gray-50 pb-4">
+                <div className="flex items-center gap-3 text-gray-500 text-[12px] mb-6 border-b border-gray-100 pb-4">
                     <div className="flex items-center gap-1">
-                        <Users size={14} className="text-gray-400" />
-                        <span>{deal.seats}</span>
+                        <Users size={14} className="text-blue-400" />
+                        <span className="font-medium">{seats} Seats</span>
                     </div>
                     <div className="h-3 w-px bg-gray-200" />
                     <div className="flex items-center gap-1">
-                        <Fuel size={14} className="text-gray-400" />
-                        <span>{deal.fuel}</span>
+                        <Fuel size={14} className="text-blue-400" />
+                        <span className="font-medium">{fuel}</span>
                     </div>
                     <div className="h-3 w-px bg-gray-200" />
                     <div className="flex items-center gap-1">
-                        <Users size={14} className="text-gray-400" />
-                        <span>{deal.transmission}</span>
+                        <Settings2 size={14} className="text-blue-400" />
+                        <span className="font-medium">{transmission}</span>
                     </div>
                 </div>
 
                 {/* Footer */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-baseline gap-1">
-                        <span className="text-lg font-bold text-[#0a111f]">${deal.price}</span>
-                        <span className="text-gray-400 text-xs">/ Day</span>
+                        <span className="text-2xl font-black text-[#0a111f] italic tracking-tighter">${car.pricePerDay}</span>
+                        <span className="text-gray-400 text-xs font-bold uppercase tracking-widest">/ Day</span>
                     </div>
                     <button
                         onClick={onAction}
-                        className="flex items-center gap-1 text-[#0a111f] font-bold text-xs hover:text-primary transition-colors group/btn"
+                        className="flex items-center justify-center w-10 h-10 bg-zinc-900 text-white rounded-xl hover:bg-primary transition-all group/btn shadow-md"
                     >
-                        Show More
-                        <ArrowUpRight size={16} className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
+                        <ArrowUpRight size={18} className="group-hover/btn:rotate-45 transition-transform" />
                     </button>
                 </div>
             </div>
