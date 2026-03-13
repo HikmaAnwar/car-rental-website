@@ -21,7 +21,7 @@ func Connect() (*gorm.DB, error) {
 	}
 
 	// AUTOMATIC TABLE CREATION
-	err = db.AutoMigrate(&models.User{})
+	err = db.AutoMigrate(&models.User{}, &models.Car{}, &models.Booking{})
 	if err != nil {
 		log.Printf("Migration failed: %v", err)
 	} else {

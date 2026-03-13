@@ -6,11 +6,14 @@ import { ArrowRight, MapPin, Search, Car, Wallet } from "lucide-react";
 
 import { useNotification } from "@/context/NotificationContext";
 
+import { useRouter } from "next/navigation";
+
 export default function Hero() {
+    const router = useRouter();
     const { showNotification } = useNotification();
 
     const handleSearchClick = () => {
-        showNotification('info', 'Coming Soon', 'Search functionality is being prepared!');
+        router.push('/cars');
     };
 
     return (

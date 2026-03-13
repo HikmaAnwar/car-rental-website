@@ -15,11 +15,18 @@ interface ExploreTopDealsProps {
     cars: Car[];
 }
 
+import { useRouter } from "next/navigation";
+
 export default function ExploreTopDeals({ cars }: ExploreTopDealsProps) {
+    const router = useRouter();
     const { showNotification } = useNotification();
 
     const handleAction = (item: string) => {
-        showNotification('info', 'Coming Soon', `${item} details will be available soon!`);
+        if (item.includes("More")) {
+            router.push('/cars');
+        } else {
+            router.push(`/cars?brand=${item}`);
+        }
     };
 
     // Use ONLY available cars for the landing deals, and limit to 4
@@ -81,6 +88,8 @@ export default function ExploreTopDeals({ cars }: ExploreTopDealsProps) {
     );
 }
 
+import Link from "next/link";
+
 function DealCard({ car, index, onAction }: { car: Car; index: number; onAction: () => void }) {
     // Generate some deterministic placeholder data for fields not in backend
     const seats = (parseInt(car.id) % 2 === 0) ? 5 : 4;
@@ -93,57 +102,56 @@ function DealCard({ car, index, onAction }: { car: Car; index: number; onAction:
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: index * 0.1 }}
-            className="bg-white rounded-[24px] border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-500 group"
+            className="bg-white rounded-[24px] border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-500 group relative cursor-pointer"
         >
-            {/* Image */}
-            <div className="relative aspect-[16/10] bg-gray-50/50">
-                <Image
-                    src={car.imageUrl || "/cars/hyundai.png"}
-                    alt={car.name}
-                    fill
-                    className="object-contain p-4 group-hover:scale-110 transition-transform duration-700"
-                />
-            </div>
-
-            {/* Content */}
-            <div className="p-6">
-                <div className="flex justify-between items-start mb-1">
-                    <h3 className="text-xl font-bold text-[#0a111f] truncate">{car.name}</h3>
-                </div>
-                <p className="text-zinc-400 font-bold text-[10px] uppercase tracking-wider mb-4">{car.brand}</p>
-
-                {/* Specs */}
-                <div className="flex items-center gap-3 text-gray-500 text-[12px] mb-6 border-b border-gray-100 pb-4">
-                    <div className="flex items-center gap-1">
-                        <Users size={14} className="text-blue-400" />
-                        <span className="font-medium">{seats} Seats</span>
-                    </div>
-                    <div className="h-3 w-px bg-gray-200" />
-                    <div className="flex items-center gap-1">
-                        <Fuel size={14} className="text-blue-400" />
-                        <span className="font-medium">{fuel}</span>
-                    </div>
-                    <div className="h-3 w-px bg-gray-200" />
-                    <div className="flex items-center gap-1">
-                        <Settings2 size={14} className="text-blue-400" />
-                        <span className="font-medium">{transmission}</span>
-                    </div>
+            <Link href={`/cars/${car.id}`}>
+                {/* Image */}
+                <div className="relative aspect-[16/10] bg-gray-50/50">
+                    <Image
+                        src={car.imageUrl || "/cars/hyundai.png"}
+                        alt={car.name}
+                        fill
+                        className="object-contain p-4 group-hover:scale-110 transition-transform duration-700"
+                    />
                 </div>
 
-                {/* Footer */}
-                <div className="flex items-center justify-between">
-                    <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-black text-[#0a111f] italic tracking-tighter">${car.pricePerDay}</span>
-                        <span className="text-gray-400 text-xs font-bold uppercase tracking-widest">/ Day</span>
+                {/* Content */}
+                <div className="p-6">
+                    <div className="flex justify-between items-start mb-1">
+                        <h3 className="text-xl font-bold text-[#0a111f] truncate">{car.name}</h3>
                     </div>
-                    <button
-                        onClick={onAction}
-                        className="flex items-center justify-center w-10 h-10 bg-zinc-900 text-white rounded-xl hover:bg-primary transition-all group/btn shadow-md"
-                    >
-                        <ArrowUpRight size={18} className="group-hover/btn:rotate-45 transition-transform" />
-                    </button>
+                    <p className="text-zinc-400 font-bold text-[10px] uppercase tracking-wider mb-4">{car.brand}</p>
+
+                    {/* Specs */}
+                    <div className="flex items-center gap-3 text-gray-500 text-[12px] mb-6 border-b border-gray-100 pb-4">
+                        <div className="flex items-center gap-1">
+                            <Users size={14} className="text-blue-400" />
+                            <span className="font-medium">{seats} Seats</span>
+                        </div>
+                        <div className="h-3 w-px bg-gray-200" />
+                        <div className="flex items-center gap-1">
+                            <Fuel size={14} className="text-blue-400" />
+                            <span className="font-medium">{fuel}</span>
+                        </div>
+                        <div className="h-3 w-px bg-gray-200" />
+                        <div className="flex items-center gap-1">
+                            <Settings2 size={14} className="text-blue-400" />
+                            <span className="font-medium">{transmission}</span>
+                        </div>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-2xl font-black text-[#0a111f] italic tracking-tighter">${car.pricePerDay}</span>
+                            <span className="text-gray-400 text-xs font-bold uppercase tracking-widest">/ Day</span>
+                        </div>
+                        <div className="flex items-center justify-center w-10 h-10 bg-zinc-900 text-white rounded-xl group-hover:bg-primary transition-all shadow-md">
+                            <ArrowUpRight size={18} className="group-hover:rotate-45 transition-transform" />
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </Link>
         </motion.div>
     );
 }

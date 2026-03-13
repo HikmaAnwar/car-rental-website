@@ -13,11 +13,14 @@ const categories = [
 
 import { useNotification } from "@/context/NotificationContext";
 
+import { useRouter } from "next/navigation";
+
 export default function Categories() {
+    const router = useRouter();
     const { showNotification } = useNotification();
 
     const handleCategoryClick = (name: string) => {
-        showNotification('info', 'Filter Active', `Showing all ${name} vehicles.`);
+        router.push(`/cars?brand=${name}`);
     };
 
     return (

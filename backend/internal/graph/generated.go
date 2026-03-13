@@ -28,6 +28,7 @@ func NewExecutableSchema(cfg Config) graphql.ExecutableSchema {
 type Config = graphql.Config[ResolverRoot, DirectiveRoot, ComplexityRoot]
 
 type ResolverRoot interface {
+	Booking() BookingResolver
 	Car() CarResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
@@ -37,6 +38,15 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	Booking struct {
+		Car       func(childComplexity int) int
+		EndDate   func(childComplexity int) int
+		ID        func(childComplexity int) int
+		StartDate func(childComplexity int) int
+		Status    func(childComplexity int) int
+		UserEmail func(childComplexity int) int
+	}
+
 	Car struct {
 		Available   func(childComplexity int) int
 		Brand       func(childComplexity int) int
@@ -47,17 +57,25 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateCar func(childComplexity int, name string, brand string, pricePerDay float64, imageURL *string) int
-		DeleteCar func(childComplexity int, id string) int
-		UpdateCar func(childComplexity int, id string, name *string, brand *string, pricePerDay *float64, available *bool, imageURL *string) int
+		CreateBooking func(childComplexity int, carID string, startDate string, endDate string, userEmail string) int
+		CreateCar     func(childComplexity int, name string, brand string, pricePerDay float64, imageURL *string) int
+		DeleteCar     func(childComplexity int, id string) int
+		UpdateCar     func(childComplexity int, id string, name *string, brand *string, pricePerDay *float64, available *bool, imageURL *string) int
 	}
 
 	Query struct {
-		Car  func(childComplexity int, id string) int
-		Cars func(childComplexity int) int
+		Bookings func(childComplexity int) int
+		Car      func(childComplexity int, id string) int
+		Cars     func(childComplexity int) int
 	}
 }
 
+type BookingResolver interface {
+	ID(ctx context.Context, obj *models.Booking) (string, error)
+
+	StartDate(ctx context.Context, obj *models.Booking) (string, error)
+	EndDate(ctx context.Context, obj *models.Booking) (string, error)
+}
 type CarResolver interface {
 	ID(ctx context.Context, obj *models.Car) (string, error)
 }
@@ -65,10 +83,12 @@ type MutationResolver interface {
 	CreateCar(ctx context.Context, name string, brand string, pricePerDay float64, imageURL *string) (*models.Car, error)
 	UpdateCar(ctx context.Context, id string, name *string, brand *string, pricePerDay *float64, available *bool, imageURL *string) (*models.Car, error)
 	DeleteCar(ctx context.Context, id string) (bool, error)
+	CreateBooking(ctx context.Context, carID string, startDate string, endDate string, userEmail string) (*models.Booking, error)
 }
 type QueryResolver interface {
 	Cars(ctx context.Context) ([]*models.Car, error)
 	Car(ctx context.Context, id string) (*models.Car, error)
+	Bookings(ctx context.Context) ([]*models.Booking, error)
 }
 
 type executableSchema graphql.ExecutableSchemaState[ResolverRoot, DirectiveRoot, ComplexityRoot]
@@ -84,6 +104,43 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 	ec := newExecutionContext(nil, e, nil)
 	_ = ec
 	switch typeName + "." + field {
+
+	case "Booking.car":
+		if e.ComplexityRoot.Booking.Car == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Booking.Car(childComplexity), true
+	case "Booking.endDate":
+		if e.ComplexityRoot.Booking.EndDate == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Booking.EndDate(childComplexity), true
+	case "Booking.id":
+		if e.ComplexityRoot.Booking.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Booking.ID(childComplexity), true
+	case "Booking.startDate":
+		if e.ComplexityRoot.Booking.StartDate == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Booking.StartDate(childComplexity), true
+	case "Booking.status":
+		if e.ComplexityRoot.Booking.Status == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Booking.Status(childComplexity), true
+	case "Booking.userEmail":
+		if e.ComplexityRoot.Booking.UserEmail == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Booking.UserEmail(childComplexity), true
 
 	case "Car.available":
 		if e.ComplexityRoot.Car.Available == nil {
@@ -122,6 +179,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Car.PricePerDay(childComplexity), true
 
+	case "Mutation.createBooking":
+		if e.ComplexityRoot.Mutation.CreateBooking == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createBooking_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateBooking(childComplexity, args["carId"].(string), args["startDate"].(string), args["endDate"].(string), args["userEmail"].(string)), true
 	case "Mutation.createCar":
 		if e.ComplexityRoot.Mutation.CreateCar == nil {
 			break
@@ -156,6 +224,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Mutation.UpdateCar(childComplexity, args["id"].(string), args["name"].(*string), args["brand"].(*string), args["pricePerDay"].(*float64), args["available"].(*bool), args["imageUrl"].(*string)), true
 
+	case "Query.bookings":
+		if e.ComplexityRoot.Query.Bookings == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Query.Bookings(childComplexity), true
 	case "Query.car":
 		if e.ComplexityRoot.Query.Car == nil {
 			break
@@ -274,6 +348,32 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_createBooking_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "carId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["carId"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "startDate", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["startDate"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "endDate", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["endDate"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "userEmail", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["userEmail"] = arg3
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_createCar_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
@@ -421,6 +521,194 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _Booking_id(ctx context.Context, field graphql.CollectedField, obj *models.Booking) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Booking_id,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Booking().ID(ctx, obj)
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Booking_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Booking",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Booking_car(ctx context.Context, field graphql.CollectedField, obj *models.Booking) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Booking_car,
+		func(ctx context.Context) (any, error) {
+			return obj.Car, nil
+		},
+		nil,
+		ec.marshalNCar2WebᚑappᚋbackendᚋinternalᚋmodelsᚐCar,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Booking_car(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Booking",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Car_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Car_name(ctx, field)
+			case "brand":
+				return ec.fieldContext_Car_brand(ctx, field)
+			case "pricePerDay":
+				return ec.fieldContext_Car_pricePerDay(ctx, field)
+			case "available":
+				return ec.fieldContext_Car_available(ctx, field)
+			case "imageUrl":
+				return ec.fieldContext_Car_imageUrl(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Car", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Booking_startDate(ctx context.Context, field graphql.CollectedField, obj *models.Booking) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Booking_startDate,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Booking().StartDate(ctx, obj)
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Booking_startDate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Booking",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Booking_endDate(ctx context.Context, field graphql.CollectedField, obj *models.Booking) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Booking_endDate,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Booking().EndDate(ctx, obj)
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Booking_endDate(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Booking",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Booking_status(ctx context.Context, field graphql.CollectedField, obj *models.Booking) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Booking_status,
+		func(ctx context.Context) (any, error) {
+			return obj.Status, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Booking_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Booking",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Booking_userEmail(ctx context.Context, field graphql.CollectedField, obj *models.Booking) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Booking_userEmail,
+		func(ctx context.Context) (any, error) {
+			return obj.UserEmail, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Booking_userEmail(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Booking",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
 
 func (ec *executionContext) _Car_id(ctx context.Context, field graphql.CollectedField, obj *models.Car) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
@@ -747,6 +1035,61 @@ func (ec *executionContext) fieldContext_Mutation_deleteCar(ctx context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_createBooking(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_createBooking,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateBooking(ctx, fc.Args["carId"].(string), fc.Args["startDate"].(string), fc.Args["endDate"].(string), fc.Args["userEmail"].(string))
+		},
+		nil,
+		ec.marshalNBooking2ᚖWebᚑappᚋbackendᚋinternalᚋmodelsᚐBooking,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createBooking(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Booking_id(ctx, field)
+			case "car":
+				return ec.fieldContext_Booking_car(ctx, field)
+			case "startDate":
+				return ec.fieldContext_Booking_startDate(ctx, field)
+			case "endDate":
+				return ec.fieldContext_Booking_endDate(ctx, field)
+			case "status":
+				return ec.fieldContext_Booking_status(ctx, field)
+			case "userEmail":
+				return ec.fieldContext_Booking_userEmail(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Booking", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createBooking_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_cars(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -841,6 +1184,49 @@ func (ec *executionContext) fieldContext_Query_car(ctx context.Context, field gr
 	if fc.Args, err = ec.field_Query_car_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_bookings(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_bookings,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Query().Bookings(ctx)
+		},
+		nil,
+		ec.marshalNBooking2ᚕᚖWebᚑappᚋbackendᚋinternalᚋmodelsᚐBookingᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_bookings(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Booking_id(ctx, field)
+			case "car":
+				return ec.fieldContext_Booking_car(ctx, field)
+			case "startDate":
+				return ec.fieldContext_Booking_startDate(ctx, field)
+			case "endDate":
+				return ec.fieldContext_Booking_endDate(ctx, field)
+			case "status":
+				return ec.fieldContext_Booking_status(ctx, field)
+			case "userEmail":
+				return ec.fieldContext_Booking_userEmail(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Booking", field.Name)
+		},
 	}
 	return fc, nil
 }
@@ -2407,6 +2793,163 @@ func (ec *executionContext) fieldContext___Type_isOneOf(_ context.Context, field
 
 // region    **************************** object.gotpl ****************************
 
+var bookingImplementors = []string{"Booking"}
+
+func (ec *executionContext) _Booking(ctx context.Context, sel ast.SelectionSet, obj *models.Booking) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, bookingImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Booking")
+		case "id":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Booking_id(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "car":
+			out.Values[i] = ec._Booking_car(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "startDate":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Booking_startDate(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "endDate":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Booking_endDate(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "status":
+			out.Values[i] = ec._Booking_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "userEmail":
+			out.Values[i] = ec._Booking_userEmail(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var carImplementors = []string{"Car"}
 
 func (ec *executionContext) _Car(ctx context.Context, sel ast.SelectionSet, obj *models.Car) graphql.Marshaler {
@@ -2539,6 +3082,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "createBooking":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createBooking(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2613,6 +3163,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_car(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "bookings":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_bookings(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -2987,6 +3559,36 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 // endregion **************************** object.gotpl ****************************
 
 // region    ***************************** type.gotpl *****************************
+
+func (ec *executionContext) marshalNBooking2WebᚑappᚋbackendᚋinternalᚋmodelsᚐBooking(ctx context.Context, sel ast.SelectionSet, v models.Booking) graphql.Marshaler {
+	return ec._Booking(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNBooking2ᚕᚖWebᚑappᚋbackendᚋinternalᚋmodelsᚐBookingᚄ(ctx context.Context, sel ast.SelectionSet, v []*models.Booking) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNBooking2ᚖWebᚑappᚋbackendᚋinternalᚋmodelsᚐBooking(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNBooking2ᚖWebᚑappᚋbackendᚋinternalᚋmodelsᚐBooking(ctx context.Context, sel ast.SelectionSet, v *models.Booking) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Booking(ctx, sel, v)
+}
 
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v any) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)

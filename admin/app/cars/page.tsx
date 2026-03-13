@@ -11,6 +11,7 @@ export default function AdminCarsPage() {
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [editingCar, setEditingCar] = useState<Car | null>(null);
+    const [uploading, setUploading] = useState(false);
 
     // Form State
     const [formData, setFormData] = useState({ name: '', brand: '', price: '', imageUrl: '' });
@@ -41,7 +42,36 @@ export default function AdminCarsPage() {
             setEditingCar(null);
             setFormData({ name: '', brand: '', price: '', imageUrl: '' });
         }
+        setUploading(false);
         setShowModal(true);
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploading(true);
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', file);
+
+        try {
+            const response = await fetch('http://localhost:8088/api/upload', {
+                method: 'POST',
+                body: uploadFormData,
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setFormData(prev => ({ ...prev, imageUrl: data.url }));
+            } else {
+                alert("Upload failed");
+            }
+        } catch (err) {
+            console.error("Upload error:", err);
+            alert("Error uploading file");
+        } finally {
+            setUploading(false);
+        }
     };
 
     const handleSave = async (e: React.FormEvent) => {
@@ -237,14 +267,49 @@ export default function AdminCarsPage() {
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">Image Link</label>
-                                <input
-                                    type="url"
-                                    value={formData.imageUrl}
-                                    onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                                    className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-4 focus:ring-blue-50 transition-all outline-none font-medium text-zinc-500 text-sm"
-                                    placeholder="https://images.unsplash.com/..."
-                                />
+                                <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">Vehicle Image</label>
+                                <div className="space-y-4">
+                                    {/* Preview & Upload */}
+                                    <div className="flex items-center gap-4 p-4 bg-zinc-50 border border-zinc-100 rounded-2xl">
+                                        <div className="w-16 h-16 bg-white rounded-xl border border-zinc-200 overflow-hidden flex items-center justify-center flex-shrink-0">
+                                            {formData.imageUrl ? (
+                                                <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <span className="text-2xl text-zinc-200">📷</span>
+                                            )}
+                                        </div>
+                                        <div className="flex-1">
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                onChange={handleFileChange}
+                                                className="hidden"
+                                                id="car-image-upload"
+                                            />
+                                            <label 
+                                                htmlFor="car-image-upload" 
+                                                className={`inline-block px-4 py-2 rounded-lg font-bold text-xs cursor-pointer transition-all ${uploading ? 'bg-zinc-200 text-zinc-400' : 'bg-white border border-zinc-200 text-zinc-600 hover:border-black hover:text-black'}`}
+                                            >
+                                                {uploading ? 'Uploading...' : 'Upload Image'}
+                                            </label>
+                                            <p className="text-[10px] text-zinc-400 mt-2 font-medium">PNG, JPG up to 10MB</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="relative flex items-center">
+                                        <div className="flex-1 h-px bg-zinc-100"></div>
+                                        <span className="px-3 text-[10px] font-bold text-zinc-300 uppercase">OR</span>
+                                        <div className="flex-1 h-px bg-zinc-100"></div>
+                                    </div>
+
+                                    <input
+                                        type="url"
+                                        value={formData.imageUrl}
+                                        onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                                        className="w-full p-4 bg-zinc-50 border border-zinc-100 rounded-xl focus:ring-4 focus:ring-blue-50 transition-all outline-none font-medium text-zinc-500 text-sm"
+                                        placeholder="Paste image URL here..."
+                                    />
+                                </div>
                             </div>
                             <div className="flex gap-4 pt-6">
                                 <button

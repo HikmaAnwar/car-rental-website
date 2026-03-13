@@ -9,7 +9,24 @@ import (
 	"Web-app/backend/internal/models"
 	"context"
 	"fmt"
+	"strconv"
+	"time"
 )
+
+// ID is the resolver for the id field.
+func (r *bookingResolver) ID(ctx context.Context, obj *models.Booking) (string, error) {
+	return strconv.FormatUint(uint64(obj.ID), 10), nil
+}
+
+// StartDate is the resolver for the startDate field.
+func (r *bookingResolver) StartDate(ctx context.Context, obj *models.Booking) (string, error) {
+	return obj.StartDate.Format(time.RFC3339), nil
+}
+
+// EndDate is the resolver for the endDate field.
+func (r *bookingResolver) EndDate(ctx context.Context, obj *models.Booking) (string, error) {
+	return obj.EndDate.Format(time.RFC3339), nil
+}
 
 // ID is the resolver for the id field.
 func (r *carResolver) ID(ctx context.Context, obj *models.Car) (string, error) {
@@ -69,7 +86,6 @@ func (r *mutationResolver) UpdateCar(ctx context.Context, id string, name *strin
 	return &car, nil
 }
 
-
 // DeleteCar is the resolver for the deleteCar field.
 func (r *mutationResolver) DeleteCar(ctx context.Context, id string) (bool, error) {
 	var car models.Car
@@ -80,6 +96,49 @@ func (r *mutationResolver) DeleteCar(ctx context.Context, id string) (bool, erro
 		return false, err
 	}
 	return true, nil
+}
+
+// CreateBooking is the resolver for the createBooking field.
+func (r *mutationResolver) CreateBooking(ctx context.Context, carID string, startDate string, endDate string, userEmail string) (*models.Booking, error) {
+	sDate, err := time.Parse("2006-01-02", startDate)
+	if err != nil {
+		sDate, err = time.Parse(time.RFC3339, startDate)
+		if err != nil {
+			return nil, fmt.Errorf("invalid start date format, use YYYY-MM-DD")
+		}
+	}
+	eDate, err := time.Parse("2006-01-02", endDate)
+	if err != nil {
+		eDate, err = time.Parse(time.RFC3339, endDate)
+		if err != nil {
+			return nil, fmt.Errorf("invalid end date format, use YYYY-MM-DD")
+		}
+	}
+
+	cID, err := strconv.ParseUint(carID, 10, 32)
+	if err != nil {
+		return nil, fmt.Errorf("invalid car id")
+	}
+
+	booking := &models.Booking{
+		CarID:     uint(cID),
+		StartDate: sDate,
+		EndDate:   eDate,
+		UserEmail: userEmail,
+		Status:    "confirmed",
+	}
+
+	if err := r.DB.Create(booking).Error; err != nil {
+		return nil, err
+	}
+
+	// Update car availability
+	r.DB.Model(&models.Car{}).Where("id = ?", cID).Update("available", false)
+
+	// Preload Car for the response
+	r.DB.Preload("Car").First(booking, booking.ID)
+
+	return booking, nil
 }
 
 // Cars is the resolver for the cars field.
@@ -93,8 +152,24 @@ func (r *queryResolver) Cars(ctx context.Context) ([]*models.Car, error) {
 
 // Car is the resolver for the car field.
 func (r *queryResolver) Car(ctx context.Context, id string) (*models.Car, error) {
-	panic(fmt.Errorf("not implemented: Car - car"))
+	var car models.Car
+	if err := r.DB.First(&car, id).Error; err != nil {
+		return nil, err
+	}
+	return &car, nil
 }
+
+// Bookings is the resolver for the bookings field.
+func (r *queryResolver) Bookings(ctx context.Context) ([]*models.Booking, error) {
+	var bookings []*models.Booking
+	if err := r.DB.Preload("Car").Find(&bookings).Error; err != nil {
+		return nil, err
+	}
+	return bookings, nil
+}
+
+// Booking returns BookingResolver implementation.
+func (r *Resolver) Booking() BookingResolver { return &bookingResolver{r} }
 
 // Car returns CarResolver implementation.
 func (r *Resolver) Car() CarResolver { return &carResolver{r} }
@@ -105,6 +180,7 @@ func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+type bookingResolver struct{ *Resolver }
 type carResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }

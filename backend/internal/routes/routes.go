@@ -39,6 +39,15 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 		api.POST("/login/2fa", authCtrl.Login2FA) 
 		api.POST("/refresh", authCtrl.Refresh)
 
+		// Booking routes (REST pattern)
+		bookingCtrl := &controllers.BookingController{DB: db}
+		api.POST("/bookings", bookingCtrl.Create)
+		api.GET("/bookings", bookingCtrl.List)
+
+		// Car routes (REST pattern for search/filters)
+		carCtrl := &controllers.CarController{DB: db}
+		api.GET("/cars", carCtrl.List)
+
 		// Protected routes
 		protected := api.Group("/")
 		protected.Use(middleware.AuthMiddleware())
@@ -66,4 +75,11 @@ func SetupRoutes(r *gin.Engine, db *gorm.DB) {
 	api.GET("/playground", func(c *gin.Context) {
 		playground.Handler("GraphQL Playground", "/api/query").ServeHTTP(c.Writer, c.Request)
 	})
+
+	// Serve static files (Uploaded images)
+	r.Static("/uploads", "./uploads")
+
+	// Upload routes (REST)
+	uploadCtrl := &controllers.UploadController{}
+	api.POST("/upload", uploadCtrl.UploadFile)
 }
